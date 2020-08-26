@@ -75,6 +75,8 @@ namespace StudentExercisesMVC.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
+
+                    // Select a single student using SQL by their id
                     cmd.CommandText = @"
             SELECT s.Id,
                 s.FirstName,
@@ -87,6 +89,7 @@ namespace StudentExercisesMVC.Controllers
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
+                    // Map the raw SQL data to a student model
                     Student student = null;
                     if (reader.Read())
                     {
@@ -103,11 +106,13 @@ namespace StudentExercisesMVC.Controllers
 
                     reader.Close();
 
+                    // If we got something back to the db, send us to the details view
                     if (student != null)
                     {
                         return View(student);
                     } else
                     {
+                        // If we didn't get anything back from the db, we made a custom not found page down here
                         return RedirectToAction(nameof(NotFound));
                     }
                     
@@ -115,6 +120,8 @@ namespace StudentExercisesMVC.Controllers
             }
         }
 
+
+        // -------- HAVEN'T IMPLEMENTED CREATE YET! ----------//
         // GET: Students/Create
         public ActionResult Create()
         {
@@ -139,6 +146,7 @@ namespace StudentExercisesMVC.Controllers
         }
 
         // GET: Students/Edit/5
+        // This method loads the edit form
         public ActionResult Edit(int id)
         {
             using (SqlConnection conn = Connection)
@@ -146,6 +154,8 @@ namespace StudentExercisesMVC.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
+
+                    // When we load the edit form, we need to select the correct student from the db so that we can pre-load their info into the form fields
                     cmd.CommandText = @"
             SELECT s.Id,
                 s.FirstName,
@@ -158,6 +168,7 @@ namespace StudentExercisesMVC.Controllers
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
+                    // map the raw SQL data to our student model
                     Student student = null;
                     if (reader.Read())
                     {
@@ -174,12 +185,14 @@ namespace StudentExercisesMVC.Controllers
 
                     reader.Close();
 
+                    // If we got something back, send it to the view
                     if (student != null)
                     {
                         return View(student);
                     }
                     else
                     {
+                        // If not, send it to our custom not found page
                         return RedirectToAction(nameof(NotFound));
                     }
 
@@ -188,6 +201,7 @@ namespace StudentExercisesMVC.Controllers
         }
 
         // POST: Students/Edit/5
+        // This method runs when we SUBMIT the edit form
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit(int id, Student student)
@@ -199,6 +213,7 @@ namespace StudentExercisesMVC.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
+                        // When we submit the edit form, go ahead and update the db with the info we passed in
                         cmd.CommandText = @"UPDATE Student
                                             SET firstName=@firstName, 
                                             lastName=@lastName, 
@@ -225,6 +240,9 @@ namespace StudentExercisesMVC.Controllers
         }
 
         // GET: Students/Delete/5
+        // This method runs when we click the "delete" link from the index view or the details view
+        // Anchor tags (like the ones in the index view) automatically send a GET request
+        // This will load a "are you sure you want to delete this?" pages
         public ActionResult Delete(int id)
         {
             using (SqlConnection conn = Connection)
@@ -232,6 +250,8 @@ namespace StudentExercisesMVC.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
+
+                    // When we confirm that the user wants to delete a student, let's show them the student they're about to delete. That means we need to select it from the db
                     cmd.CommandText = @"
             SELECT s.Id,
                 s.FirstName,
@@ -244,6 +264,7 @@ namespace StudentExercisesMVC.Controllers
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
+                    // And then map it to our models so that we can send it to our view
                     Student student = null;
                     if (reader.Read())
                     {
@@ -274,9 +295,10 @@ namespace StudentExercisesMVC.Controllers
         }
 
         // POST: Students/Delete/5
+        // This method runs once they have CONFIRMED that they want to delete a student
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult Delete(int id)
         {
             try
             {
@@ -286,6 +308,7 @@ namespace StudentExercisesMVC.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
+                        // We'll take the Id of the student we want to delete, and we'll delete all their exercises and also the student itself
                         cmd.CommandText = @"DELETE FROM StudentExercise WHERE studentId = @id
                         DELETE FROM Student WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -303,6 +326,7 @@ namespace StudentExercisesMVC.Controllers
             }
         }
 
+        // This is a method we made to handle 404's. This will show us the NotFound view in our students folder.
         public new ActionResult NotFound()
         {
             return View();
