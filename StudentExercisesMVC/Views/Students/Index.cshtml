@@ -26,8 +26,9 @@
             <th>
                 @Html.DisplayNameFor(model => model.SlackHandle)
             </th>
+            @*Changed to cohort name*@
             <th>
-                @Html.DisplayNameFor(model => model.CohortId)
+                @Html.DisplayNameFor(model => model.Cohort.Name)
             </th>
             <th></th>
         </tr>
@@ -45,8 +46,9 @@
             <td>
                 @Html.DisplayFor(modelItem => singleStudent.SlackHandle)
             </td>
+            @*Changed to cohort name*@
             <td>
-                @Html.DisplayFor(modelItem => singleStudent.CohortId)
+                @Html.DisplayFor(modelItem => singleStudent.Cohort.Name)
             </td>
             <td>
                 <div class="badge badge-pill badge-success">

@@ -30,6 +30,8 @@ namespace StudentExercisesMVC.Controllers
             }
         }
         // GET: Students
+
+            // Show list of students with their cohort
         public ActionResult Index()
         {
             using (SqlConnection conn = Connection)
@@ -42,8 +44,8 @@ namespace StudentExercisesMVC.Controllers
                 s.FirstName,
                 s.LastName,
                 s.SlackHandle,
-                s.CohortId
-            FROM Student s
+                c.Name
+            FROM Student s JOIN Cohort c ON s.CohortId = c.Id
         ";
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -56,7 +58,10 @@ namespace StudentExercisesMVC.Controllers
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
                             SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+                            Cohort = new Cohort
+                            {
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            }
                         };
 
                         students.Add(student);
@@ -112,18 +117,19 @@ namespace StudentExercisesMVC.Controllers
                     if (student != null)
                     {
                         return View(student);
-                    } else
+                    }
+                    else
                     {
                         // If we didn't get anything back from the db, we made a custom not found page down here
                         return RedirectToAction(nameof(NotFound));
                     }
-                    
+
                 }
             }
         }
 
 
-        
+
         // GET: Students/Create
         public ActionResult Create()
         {
@@ -132,7 +138,7 @@ namespace StudentExercisesMVC.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    
+
                     // Select all the cohorts
                     cmd.CommandText = @"SELECT Cohort.Id, Cohort.Name FROM Cohort";
 
@@ -206,6 +212,8 @@ namespace StudentExercisesMVC.Controllers
         // This method loads the edit form
         public ActionResult Edit(int id)
         {
+
+            StudentCohortViewModel viewModel = new StudentCohortViewModel();
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
@@ -225,11 +233,10 @@ namespace StudentExercisesMVC.Controllers
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    // map the raw SQL data to our student model
-                    Student student = null;
+                    // map the raw SQL data to our student model and attach it to the view model
                     if (reader.Read())
                     {
-                        student = new Student
+                        viewModel.student = new Student
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
@@ -242,19 +249,37 @@ namespace StudentExercisesMVC.Controllers
 
                     reader.Close();
 
-                    // If we got something back, send it to the view
-                    if (student != null)
+                    // Get all the cohorts for a dropdown
+                    cmd.CommandText = @"SELECT Cohort.Id, Cohort.Name FROM Cohort";
+                    SqlDataReader cohortReader = cmd.ExecuteReader();
+
+                    while (cohortReader.Read())
                     {
-                        return View(student);
+                        // Map the raw data to our cohort model
+                        Cohort cohort = new Cohort
+                        {
+                            Id = cohortReader.GetInt32(cohortReader.GetOrdinal("Id")),
+                            Name = cohortReader.GetString(cohortReader.GetOrdinal("Name"))
+                        };
+
+                        // Use the info to build our SelectListItem
+                        SelectListItem cohortOptionTag = new SelectListItem()
+                        {
+                            Text = cohort.Name,
+                            Value = cohort.Id.ToString()
+                        };
+
+                        // Add the select list item to our list of dropdown options
+                        viewModel.cohorts.Add(cohortOptionTag);
+
                     }
-                    else
-                    {
-                        // If not, send it to our custom not found page
-                        return RedirectToAction(nameof(NotFound));
-                    }
+
+                    cohortReader.Close();
 
                 }
             }
+
+            return View(viewModel);
         }
 
         // POST: Students/Edit/5
@@ -394,6 +419,6 @@ namespace StudentExercisesMVC.Controllers
             return View();
         }
 
-      
+
     }
 }
